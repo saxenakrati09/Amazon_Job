@@ -325,4 +325,44 @@ p10
 
 Basic Qualifications generally requires Masters degree.
 
+## Which jobs require which type of degrees?
+
+
+```{r fig.width=7, fig.height=5, echo=FALSE}
+counts <- as.data.frame(table(amazon$domain, amazon$education))
+colnames(counts) <- c("Domain", "Education", "Freq")
+p11 <- ggplot(data = filter(counts, counts$Domain != "software"), aes(Domain, Freq)) +
+      geom_bar(aes(fill = Education), position = "dodge",stat = "identity") +
+      ggtitle("Domain distribution based on Education") 
+
+p12 <- ggplot(data = filter(counts, counts$Domain == "software"), aes(Domain, Freq)) +
+      geom_bar(aes(fill = Education), position = "dodge",stat = "identity") +
+      ggtitle("Domain distribution based on Education") 
+multiplot(p11, p12)
+```
+
+```{r fig.width=7, fig.height=5, echo=FALSE}
+counts <- as.data.frame(table(amazon$positions, amazon$education))
+colnames(counts) <- c("Positions", "Education", "Freq")
+p13 <- ggplot(data = filter(counts, counts$Positions != "engineer"), aes(Positions, Freq)) +
+      geom_bar(aes(fill = Education), position = "dodge",stat = "identity") +
+      ggtitle("Positions distribution based on Education") 
+
+p14 <- ggplot(data = filter(counts, counts$Positions == "engineer"), aes(Positions, Freq)) +
+      geom_bar(aes(fill = Education), position = "dodge",stat = "identity") +
+      ggtitle("Positions distribution based on Education") 
+multiplot(p13, p14)
+```
+
+# What languages are in demand?
+
+```{r}
+
+```
+
+
+
+
+
+
 

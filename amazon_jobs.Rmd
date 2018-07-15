@@ -1,0 +1,97 @@
+---
+title: "Amazon Jobs"
+output: html_notebook
+---
+
+Let's check out the data!
+
+```{r}
+library(readr)
+amazon <- read_csv("amazon_jobs_dataset.csv")
+head(amazon)
+```
+
+Questions that we can focus on:
+  - What are the popular locations of job openings
+  - Are there certain months when job opening are more? 
+    - How many jobs are posted every year?
+    - How many jobs are posted every month?
+  - What are mosr popular job titles?
+  - What are minimum educational qualifications?
+  - What languages are required for jobs?
+  - How many years of experience is required?
+  - Word clouds of preferred qualifications
+  - Word clouds of Basic Qualifications
+  - Word clouds of JOb description
+
+```{r}
+dim(amazon)
+```
+```{r}
+unique(amazon$Posting_date)
+```
+
+We see that in some dates, there are multiple spaces between month and day. Let's split it to year month and day.
+
+```{r}
+library(stringr)
+amazon$posting_month <- str_extract(amazon$Posting_date , "([A-Za-z]+)")
+amazon$posting_day <- str_extract(amazon$Posting_date , "([0-9]+)")
+amazon$posting_year <- str_extract(amazon$Posting_date, "([0-9]{4})")
+```
+
+```{r}
+unique(amazon$posting_month)
+unique(amazon$posting_day)
+unique(amazon$posting_year)
+```
+Let's also extract the countries from location column.
+
+```{r}
+amazon$country <- str_extract(amazon$location, "[A-Za-z]+")
+unique(amazon$country)
+```
+
+```{r}
+unique(amazon$location)
+```
+
+```{r}
+amazon$city <- word(amazon$location, -1)
+unique(amazon$city)
+```
+
+Let us correct the city names that have multiple words.
+```{r}
+amazon$city <- gsub(pattern = "Alto", replacement = "East Palo Alto", amazon$city)
+amazon$city <- gsub(pattern = "Ia<U+015F>i", replacement = "Iasi", amazon$city)
+amazon$city <- gsub(pattern = "Monica", replacement = "Santa Monica", amazon$city)
+amazon$city <- gsub(pattern = "Francisco", replacement = "San Francisco", amazon$city)
+amazon$city <- gsub(pattern = "Wroclawskie", replacement = "Bielany Wroclawskie", amazon$city)
+amazon$city <- gsub(pattern = "Diego", replacement = "San Diego", amazon$city)
+amazon$city <- gsub(pattern = "Barbara", replacement = "Santa Barbara", amazon$city)
+amazon$city <- gsub(pattern = "York", replacement = "New York", amazon$city)
+amazon$city <- gsub(pattern = "Town", replacement = "Cape Town", amazon$city)
+amazon$city <- gsub(pattern = "Cruz", replacement = "Santa Cruz", amazon$city)
+amazon$city <- gsub(pattern = "Obispo", replacement = "San Luis Obispo", amazon$city)
+amazon$city <- gsub(pattern = "Paulo", replacement = "Sao Paulo", amazon$city)
+amazon$city <- gsub(pattern = "Hasharon", replacement = "Hod Hasharon", amazon$city)
+amazon$city <- gsub(pattern = "IL,", replacement = "Hod Hasharon", amazon$city)
+amazon$city <- gsub(pattern = "On,", replacement = "Ottawa", amazon$city)
+amazon$city <- gsub(pattern = "Jose", replacement = "San Jose", amazon$city)
+amazon$city <- gsub(pattern = "CA,", replacement = "Ottawa", amazon$city)
+amazon$city <- gsub(pattern = "Vegas", replacement = "Las Vegas", amazon$city)
+```
+
+The word "City" has been used with three different cities, so include them.
+
+```{r}
+amazon$city <- ifelse(amazon$location == "US, CA, Foster City", "Foster City", amazon$city)
+amazon$city <- ifelse(amazon$location == "MX, EMEX, Mexico City", "Mexico City", amazon$city)
+amazon$city <- ifelse(amazon$location == "US, NJ, Jersey City", "Jersey City", amazon$city)
+```
+
+```{r}
+head(amazon)
+```
+

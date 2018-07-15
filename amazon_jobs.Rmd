@@ -30,7 +30,7 @@ Questions that we can focus on:
 dim(amazon)
 ```
 ```{r}
-unique(amazon$Posting_date)
+unique(amazon$Posting_date)[1:20]
 ```
 
 We see that in some dates, there are multiple spaces between month and day. Let's split it to year month and day.
@@ -163,9 +163,9 @@ p4
 
 amazon$Posting_date <- paste(amazon$posting_year, amazon$posting_month, amazon$posting_day,sep="-")
 
-amazon$Posting_date <- strptime(amazon$Posting_date,format="%Y-%b-%d")
-amazon$Posting_date$zone <- NULL
-amazon$Posting_date[1:10]
+amazon$Posting_date <- as.Date(strptime(amazon$Posting_date,format="%Y-%b-%d"))
+#amazon$Posting_date$zone <- NULL
+(amazon$Posting_date[1:10])
 
 #get day of the week based on date
 dow <- function(x) format(as.Date(x), "%A")
@@ -174,7 +174,155 @@ amazon$weekday[1:20]
 ```
 
 ```{r}
-posting_date <- amazon[,c("posting_month", "posting_year", "weekday")]
+posting_date <- amazon[,c("posting_month", "posting_year", "weekday", "Posting_date")]
 head(posting_date)
 ```
+
+```{r}
+year <- as.data.frame(table(posting_date$posting_year))
+colnames(year) <- c("Year", "Freq")
+p5 <- ggplot(data = year, aes(Year, Freq, fill = Year)) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label=Freq), color="black", size=3) +
+      ggtitle("Jobs postings by Year") + 
+      guides(fill=FALSE) +
+      tilt_theme 
+p5
+```
+
+```{r}
+mon <- as.data.frame(table(posting_date$posting_month))
+colnames(mon) <- c("Mon", "Freq")
+lev = c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+mon$Month <- factor(mon$Mon, lev)
+ 
+p6 <- ggplot(data = mon, aes(Month, Freq, fill = Month)) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label=Freq), color="black", size=3) +
+      ggtitle("Jobs postings by Month") + 
+      guides(fill=FALSE) +
+      tilt_theme 
+p6
+```
+
+```{r}
+jday <- as.data.frame(table(posting_date$weekday))
+colnames(jday) <- c("wd", "Freq")
+lev <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+jday$weekday <- factor(jday$wd, lev)
+
+p7 <- ggplot(data = jday, aes(weekday, Freq, fill = weekday)) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label=Freq), color="black", size=3) +
+      ggtitle("Jobs postings by Weekday") + 
+      guides(fill=FALSE) +
+      tilt_theme 
+p7
+```
+
+The above graphs show that most of the job postings are recent and there has been large increase in jobs in 2017 and 2018. January and february are hot months for jobs. Also, the jobs are posted generally on weekdays, mostly on tuesdays and wednesday. This is true as generally employees are completing more work in the first half of weekdays. 
+
+# Analysis of Job titles
+
+## What are most popular job titles?
+
+```{r}
+title <- arrange(as.data.frame(table(amazon$Title)), desc(Freq))
+colnames(title) <- c("Title", "Freq")
+p8 <- ggplot(data = head(title, 10), aes(Title, Freq, fill = Title)) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label=Freq), color="black", size=3) +
+      ggtitle("Top 10 jobs") + 
+      guides(fill=FALSE) +
+      coord_flip() +
+      tilt_theme 
+p8
+```
+
+There are various job postings. Top 10 are shown above. Let us now divide it in different domains and different positions.
+```{r}
+
+# software, game, quality, data, web, security, sale,iot, research
+# lead, manager, developer, engineer, consultant, artist, analyst, scientist,
+domain <- c("software", "game", "quality", "data", "web", "security", "sale", "research", "iot", "ui")
+positions <- c("lead", "leader","manager", "developer", "engineer", "consultant", "artist", "analyst", "scientist")
+amazon$Title <- tolower(amazon$Title)
+#unique(amazon$Title)
+amazon$domain <- NA
+amazon$positions <- NA
+
+```
+
+
+
+```{r}
+for(i in domain){
+amazon$domain1 <- grepl(i, amazon$Title)
+amazon$domain <- ifelse(amazon$domain1 == "TRUE", i, amazon$domain)
+}
+amazon$domain <- ifelse(amazon$domain == FALSE, "other", amazon$domain)
+
+for(i in positions){
+  amazon$pos1 <- grepl(i, amazon$Title)
+  amazon$positions <- ifelse(amazon$pos1 == "TRUE", i, amazon$positions)
+}
+amazon$positions <- ifelse(is.na(amazon$positions), "other", amazon$positions)
+amazon <- subset(amazon, select = -c(domain1, pos1))
+
+```
+
+```{r}
+pos <- as.data.frame(table(amazon$positions))
+colnames(pos) <- c("position", "Freq")
+p9 <- ggplot(data = pos, aes(position, Freq, fill = position)) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label=Freq), color="black", size=3) +
+      ggtitle("Top 10 domains") + 
+      guides(fill=FALSE) +
+      coord_flip() 
+p9
+```
+
+```{r}
+dom <- as.data.frame(table(amazon$domain))
+colnames(dom) <- c("domain", "Freq")
+p9 <- ggplot(data = dom, aes(domain, Freq, fill = domain)) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label=Freq), color="black", size=3) +
+      ggtitle("Top 10 domains") + 
+      guides(fill=FALSE) +
+      coord_flip() 
+p9
+```
+
+# What are minimum educational qualifications?
+
+```{r}
+amazon$education <- NA
+degree_list = c("ba", "bs", "b.tech","bachelor", "phd","ms","master", "mba","m.tech")
+amazon$`BASIC QUALIFICATIONS` <- tolower(amazon$`BASIC QUALIFICATIONS`)
+
+for(i in degree_list){
+  amazon$deg1 <- grepl(i, amazon$`BASIC QUALIFICATIONS`)
+  amazon$education <- ifelse(amazon$deg1 == "TRUE", i, amazon$education)
+}
+amazon$education <- ifelse(is.na(amazon$education), "other", amazon$education)
+amazon <- subset(amazon, select = -c(deg1))
+
+```
+
+```{r}
+edu <- as.data.frame(table(amazon$education))
+colnames(edu) <- c("Education", "Freq")
+p10 <- ggplot(data = edu, aes(Education, Freq, fill = Education)) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label=Freq), color="black", size=3) +
+      ggtitle("Jobs based on degrees") + 
+      guides(fill=FALSE) +
+      coord_flip() 
+p10
+```
+
+Basic Qualifications generally requires Masters degree.
+
 

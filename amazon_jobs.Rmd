@@ -12,14 +12,16 @@ head(amazon)
 ```
 
 Questions that we can focus on:
-  - What are the popular locations of job openings
+  - What are the popular locations of job openings?
   - Are there certain months when job opening are more? 
     - How many jobs are posted every year?
     - How many jobs are posted every month?
-  - What are mosr popular job titles?
+  - What are most popular job titles?
   - What are minimum educational qualifications?
+    - Which job requires higher degree?
   - What languages are required for jobs?
   - How many years of experience is required?
+    - Which job categories require more experience?
   - Word clouds of preferred qualifications
   - Word clouds of Basic Qualifications
   - Word clouds of JOb description
@@ -93,5 +95,86 @@ amazon$city <- ifelse(amazon$location == "US, NJ, Jersey City", "Jersey City", a
 
 ```{r}
 head(amazon)
+```
+
+# What are most popular locations of Job Openings?
+
+```{r}
+library(dplyr)
+location <- amazon[, c("country", "city")]
+loc1 <- as.data.frame(table(location$city))
+colnames(loc1) <- c("city", "Freq")
+
+loc1 <- merge(loc1,location,by="city")
+loc1 <- arrange(loc1, desc(Freq))
+loc1 <- loc1 %>% distinct(city, .keep_all = TRUE)
+loc1
+```
+
+
+```{r fig.width=5, fig.height=3, echo=FALSE}
+library(ggplot2)
+library(Rmisc)
+tilt_theme <- theme(axis.text.x=element_text(angle=45, hjust=1))
+p1 <- ggplot(data = head(loc1, 10), aes(city, Freq, fill = country)) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label=Freq), color="black", size=3) +
+      ggtitle("Top 10 Job Locations") + 
+      coord_flip() +
+      tilt_theme 
+p1
+```
+
+```{r fig.width=5, fig.height=3, echo=FALSE}
+p2 <- ggplot(data = tail(loc1, 50), aes(city, Freq, fill = country)) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label=Freq), color="black", size=3) +
+      ggtitle("Last 50 Job Locations") + 
+      coord_flip() +
+      tilt_theme 
+p2
+```
+
+Distribution of Jobs in all countries except US
+```{r}
+p3 <- ggplot(filter(loc1,loc1$country!="US"), aes(x=factor(country), y=Freq, fill = factor(country))) + 
+  geom_boxplot() 
+p3
+```
+
+Distribution of jobs in US
+
+```{r}
+p4 <- ggplot(data = filter(loc1, loc1$country == "US"), aes(city, Freq, fill = city)) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label=Freq), color="black", size=3) +
+      ggtitle("Jobs in US") + 
+      coord_flip() +
+      guides(fill=FALSE) +
+      tilt_theme 
+p4
+```
+
+# Analysis of Job Posting Date
+
+## How many jobs are posted every year and every month? Is there a certain period of year when jobs are posted more fequently?
+
+```{r}
+
+amazon$Posting_date <- paste(amazon$posting_year, amazon$posting_month, amazon$posting_day,sep="-")
+
+amazon$Posting_date <- strptime(amazon$Posting_date,format="%Y-%b-%d")
+amazon$Posting_date$zone <- NULL
+amazon$Posting_date[1:10]
+
+#get day of the week based on date
+dow <- function(x) format(as.Date(x), "%A")
+amazon$weekday <- dow(amazon$Posting_date)
+amazon$weekday[1:20]
+```
+
+```{r}
+posting_date <- amazon[,c("posting_month", "posting_year", "weekday")]
+head(posting_date)
 ```
 

@@ -357,12 +357,82 @@ multiplot(p13, p14)
 # What languages are in demand?
 
 ```{r}
+list_of_occurence <- c()
+languages <- c('swift','matlab','mongodb','hadoop','cosmos', 'mysql','spark', 'pig', 'python', 'java.', 'java,','c[++]', 'php', 'javascript', 'objective c', 'ruby', 'perl','c ','c#', ' r,')
+amazon$`PREFERRED QUALIFICATIONS` <- tolower(amazon$`PREFERRED QUALIFICATIONS`)
+
+for(i in languages){
+  amazon$dummy <- str_count(amazon$`PREFERRED QUALIFICATIONS`, i)
+  list_of_occurence <- c(list_of_occurence, sum(amazon$dummy, na.rm = TRUE))
+}
+list_of_occurence
+```
+
+```{r}
+lan <- data.frame(cbind(languages, as.numeric(list_of_occurence)))
+p15 <- ggplot(data = lan, aes(languages, list_of_occurence, fill = languages)) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label=list_of_occurence), color="black", size=3) +
+      ggtitle("Languages in job description") + 
+      guides(fill=FALSE) +
+      coord_flip() 
+p15
+```
+
+Java, C, C++ and python are popular on-demand languages in jobs.
+
+
+# How many years of experience is required?
+
+```{r}
+amazon$dummy <- str_extract(amazon$`BASIC QUALIFICATIONS`, '([0-9]+) year')
+amazon$dummy <- ifelse(is.na(amazon$dummy), "0 year", amazon$dummy)
+
+split_year <- function(var){
+ return(as.numeric(unlist(str_split(var, " "))[1]))
+}
+amazon$experience <- sapply(amazon$dummy, split_year)
 
 ```
 
+Let's see the experience, excluding 0 year experience.
+```{r}
+exp <- as.data.frame(table(amazon$experience))
+colnames(exp) <- c("Experience", "Freq")
+p16 <- ggplot(data = filter(exp, exp$Experience != 0), aes(Experience, Freq, fill = Experience)) +
+      geom_bar(stat = "identity") +
+      geom_text(aes(label=Freq), color="black", size=3) +
+      ggtitle("Experience needed") + 
+      guides(fill=FALSE) +
+      coord_flip() 
+p16
+```
 
+```{r fig.width=7, fig.height=5, echo=FALSE}
+counts <- as.data.frame(table(amazon$positions, amazon$experience))
+colnames(counts) <- c("Positions", "Experience", "Freq")
+p17 <- ggplot(data = filter(counts, counts$Experience != 0), aes(Positions, Freq)) +
+      geom_bar(aes(fill = Experience), position = "dodge",stat = "identity") +
+      ggtitle("Positions distribution based on Experience") 
+p18 <- ggplot(data = filter(counts, counts$Experience == 0), aes(Positions, Freq)) +
+      geom_bar(aes(fill = Experience), position = "dodge",stat = "identity") +
+      ggtitle("Positions where Experience is not defined") 
+multiplot(p17, p18)
 
+```
 
+```{r fig.width=7, fig.height=5, echo=FALSE}
+counts <- as.data.frame(table(amazon$domain, amazon$experience))
+colnames(counts) <- c("Domain", "Experience", "Freq")
+p19 <- ggplot(data = filter(counts, counts$Experience != 0), aes(Domain, Freq)) +
+      geom_bar(aes(fill = Experience), position = "dodge",stat = "identity") +
+      ggtitle("Domain distribution based on Experience") 
+
+p20 <- ggplot(data = filter(counts, counts$Experience == 0), aes(Domain, Freq)) +
+      geom_bar(aes(fill = Experience), position = "dodge",stat = "identity") +
+      ggtitle("Domain where Experience is not defined") 
+multiplot(p19, p20)
+```
 
 
 

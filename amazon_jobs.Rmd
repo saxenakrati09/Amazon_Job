@@ -411,28 +411,140 @@ p16
 ```{r fig.width=7, fig.height=5, echo=FALSE}
 counts <- as.data.frame(table(amazon$positions, amazon$experience))
 colnames(counts) <- c("Positions", "Experience", "Freq")
-p17 <- ggplot(data = filter(counts, counts$Experience != 0), aes(Positions, Freq)) +
+p17 <- ggplot(data = filter(counts, counts$Experience != 0 & counts$Positions != "engineer"), aes(Positions, Freq)) +
       geom_bar(aes(fill = Experience), position = "dodge",stat = "identity") +
-      ggtitle("Positions distribution based on Experience") 
-p18 <- ggplot(data = filter(counts, counts$Experience == 0), aes(Positions, Freq)) +
+      ggtitle("Positions distribution based on Experience for positions excluding enginner") 
+p18 <- ggplot(data = filter(counts, counts$Experience == 0 & counts$Positions != "engineer"), aes(Positions, Freq)) +
       geom_bar(aes(fill = Experience), position = "dodge",stat = "identity") +
-      ggtitle("Positions where Experience is not defined") 
-multiplot(p17, p18)
+      ggtitle("Positions where Experience is not defined excluding engineer") 
+p19 <- ggplot(data = filter(counts, counts$Positions == "engineer"), aes(Positions, Freq)) +
+      geom_bar(aes(fill = Experience), position = "dodge",stat = "identity") +
+      ggtitle("Engineer Positions distribution based on Experience") 
+p20 <- ggplot(data = filter(counts, counts$Experience != 0 & counts$Positions == "engineer"), aes(Positions, Freq)) +
+      geom_bar(aes(fill = Experience), position = "dodge",stat = "identity") +
+      ggtitle("Engineer Positions where Experience is not zero") 
+multiplot(p17, p18, p19, p20, layout = matrix(c(1,2,3,4), nrow=2, byrow=TRUE))
 
 ```
 
 ```{r fig.width=7, fig.height=5, echo=FALSE}
 counts <- as.data.frame(table(amazon$domain, amazon$experience))
 colnames(counts) <- c("Domain", "Experience", "Freq")
-p19 <- ggplot(data = filter(counts, counts$Experience != 0), aes(Domain, Freq)) +
+p21 <- ggplot(data = filter(counts, counts$Experience != 0 & counts$Domain != "software"), aes(Domain, Freq)) +
       geom_bar(aes(fill = Experience), position = "dodge",stat = "identity") +
-      ggtitle("Domain distribution based on Experience") 
+      ggtitle("Domain distribution based on Experience for domain excluding software") 
 
-p20 <- ggplot(data = filter(counts, counts$Experience == 0), aes(Domain, Freq)) +
+p22 <- ggplot(data = filter(counts, counts$Experience == 0 & counts$Domain != "software"), aes(Domain, Freq)) +
       geom_bar(aes(fill = Experience), position = "dodge",stat = "identity") +
-      ggtitle("Domain where Experience is not defined") 
-multiplot(p19, p20)
+      ggtitle("Domain where Experience is not defined for domain excluding software") 
+
+p23 <- ggplot(data = filter(counts, counts$Domain == "software"), aes(Domain, Freq)) +
+      geom_bar(aes(fill = Experience), position = "dodge",stat = "identity") +
+      ggtitle("Domain distribution based on Experience for software") 
+
+p24 <- ggplot(data = filter(counts, counts$Experience != 0 & counts$Domain == "software"), aes(Domain, Freq)) +
+      geom_bar(aes(fill = Experience), position = "dodge",stat = "identity") +
+      ggtitle("Domain where Experience is not zero for software") 
+
+multiplot(p21, p22, p23, p24, layout = matrix(c(1,2,3,4), nrow=2, byrow=TRUE))
 ```
 
+# Word Clouds of Qualifications and Job description
+
+```{r}
+library(wordcloud)
+library(SnowballC)
+library(RColorBrewer)
+library(tm)
+texts <- amazon$`PREFERRED QUALIFICATIONS`
+#texts <- iconv(texts, to = "utf-8")
+corpus <- Corpus(VectorSource(texts))
+corpus <- tm_map(corpus, PlainTextDocument)
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, removeWords, stopwords('english'))
+#corpus <- tm_map(corpus, stemDocument)
+corpus <- tm_map(corpus, removeWords, c("00b7","and", "this", "there")) 
+corpus <- Corpus(VectorSource(corpus))
+dtm <- TermDocumentMatrix(corpus)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+head(d, 10)
+d <- d[-which(d$word %in% c("00b7","and","this","that")),]
+set.seed(1234)
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+title("Preferred Qualifications Word Cloud")
+```
+
+```{r}
+texts <- amazon$`BASIC QUALIFICATIONS`
+#texts <- iconv(texts, to = "utf-8")
+corpus <- Corpus(VectorSource(texts))
+corpus <- tm_map(corpus, PlainTextDocument)
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, removeWords, stopwords('english'))
+#corpus <- tm_map(corpus, stemDocument)
+corpus <- tm_map(corpus, removeWords, c("00b7","and", "this", "there")) 
+corpus <- Corpus(VectorSource(corpus))
+dtm <- TermDocumentMatrix(corpus)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+head(d, 10)
+d <- d[-which(d$word %in% c("00b7","and","this","that")),]
+set.seed(1234)
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+title("Basic Qualifications Word Cloud")
+```
+
+```{r  fig.width=5, fig.height=5, echo=FALSE}
+texts <- amazon$DESCRIPTION
+#texts <- iconv(texts, to = "utf-8")
+corpus <- Corpus(VectorSource(texts))
+corpus <- tm_map(corpus, PlainTextDocument)
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, removeWords, stopwords('english'))
+#corpus <- tm_map(corpus, stemDocument)
+corpus <- tm_map(corpus, removeWords, c("00b7","and", "this", "there", "you", "will")) 
+corpus <- Corpus(VectorSource(corpus))
+dtm <- TermDocumentMatrix(corpus)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+head(d, 10)
+d <- d[-which(d$word %in% c("00b7","and","this","that", "you", "will")),]
+set.seed(1234)
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+title("Job Description Word Cloud")
+```
+
+```{r}
+texts <- amazon$Title
+#texts <- iconv(texts, to = "utf-8")
+corpus <- Corpus(VectorSource(texts))
+corpus <- tm_map(corpus, PlainTextDocument)
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, removeWords, stopwords('english'))
+#corpus <- tm_map(corpus, stemDocument)
+corpus <- tm_map(corpus, removeWords, c("00b7","and", "this", "there", "you", "will")) 
+corpus <- Corpus(VectorSource(corpus))
+dtm <- TermDocumentMatrix(corpus)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+head(d, 10)
+#d <- d[-which(d$word %in% c("00b7","and","this","that", "you", "will")),]
+set.seed(1234)
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+title("Job Title Word Cloud")
+```
 
 
